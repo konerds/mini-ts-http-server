@@ -1,5 +1,5 @@
-import { T_METHOD } from "./method";
-import { T_QUERY } from "./query";
+import { T_METHOD } from './method';
+import { T_QUERY } from './query';
 
 interface T_REQUEST {
   method: T_METHOD;
@@ -18,4 +18,4 @@ interface T_PARSED_HEAD_REQUEST {
   query: T_QUERY;
 }
 
-export { T_REQUEST, T_PARSED_HEAD_REQUEST };
+export { T_PARSED_HEAD_REQUEST, T_REQUEST };

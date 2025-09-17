@@ -1,20 +1,23 @@
-import { parseQueryString } from "./query";
-import type { T_METHOD, T_PARSED_HEAD_REQUEST } from "./interfaces";
+import type { T_METHOD, T_PARSED_HEAD_REQUEST } from './interfaces';
+import { parseQueryString } from './query';
 
 class ErrorParseRequest extends Error {}
 
 function parseHead(textsHead: string) {
-  const lines = textsHead.split("\r\n");
-  let [method, path, httpVersion] = (lines[0] || "").split(" ");
+  const lines = textsHead.split('\r\n');
+  const parts = (lines[0] || '').split(' ');
+  const method = parts[0];
+  const httpVersion = parts[2];
+  let path = parts[1];
 
   if (!method || !path || !httpVersion) {
-    throw new ErrorParseRequest("Invalid start line");
+    throw new ErrorParseRequest('Invalid start line');
   }
 
   const headers: Record<string, string> = {};
 
   for (const line of lines) {
-    const idx = line.indexOf(":");
+    const idx = line.indexOf(':');
 
     if (idx <= 0) {
       continue;
@@ -26,7 +29,7 @@ function parseHead(textsHead: string) {
   }
 
   let query = {};
-  const idxStartQueryString = path.indexOf("?");
+  const idxStartQueryString = path.indexOf('?');
 
   if (idxStartQueryString >= 0) {
     path = path.slice(0, idxStartQueryString);
@@ -34,12 +37,12 @@ function parseHead(textsHead: string) {
   }
 
   return {
+    headers,
+    httpVersion,
     method: method as T_METHOD,
     path,
-    httpVersion,
-    headers,
     query,
   } as T_PARSED_HEAD_REQUEST;
 }
 
-export { parseHead, ErrorParseRequest };
+export { ErrorParseRequest, parseHead };
