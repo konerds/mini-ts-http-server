@@ -1,59 +1,78 @@
-import { Server, createServer } from "net";
-import { type T_REQUEST } from "./interfaces";
-import { C_STATUS_HTTP, C_REASON_STATUS_HTTP } from "./constants";
-import { parseHead, ErrorParseRequest } from "./request";
-import { buildResponse } from "./response";
+import { createServer, Server, Socket } from 'net';
 
-class ServerHTTP {
+import { C_REASON_STATUS_HTTP, C_STATUS_HTTP } from './constants';
+import { I_HANDLER, type T_REQUEST } from './interfaces';
+import { ErrorParseRequest, parseHead } from './request';
+import { buildResponse } from './response';
+
+class ServerHTTP<T extends I_HANDLER> {
   private server?: Server;
+  private sockets = new Set<Socket>();
+  private hostname: string;
+  private port: number;
+  private handler: T;
+  private logger: any;
 
   constructor(
-    private hostname: string,
-    private port: number,
-    private handler: {
-      handleSuccess(req: T_REQUEST): Promise<Buffer>;
-      handleError(e: Error): Promise<Buffer>;
-    },
-    private logger: any = console
-  ) {}
+    hostname: string,
+    port: number,
+    handler: T,
+    logger: any = console
+  ) {
+    this.hostname = hostname;
+    this.port = port;
+    this.handler = handler;
+    this.logger = logger;
+  }
 
   start() {
     this.server = createServer((socket) => {
+      this.sockets.add(socket);
+      socket.on('close', () => this.sockets.delete(socket));
+
+      socket.on('error', (err: any) => {
+        if (err?.code === 'ECONNRESET') {
+          return;
+        }
+
+        this.logger.warn({ event: 'socket_error', message: err?.message });
+      });
+
       let buffer = Buffer.alloc(0);
 
-      socket.on("data", async (chunk) => {
+      socket.on('data', async (chunk) => {
         try {
           buffer = Buffer.concat([buffer, chunk]);
-          const delimiter = Buffer.from("\r\n\r\n");
+          const delimiter = Buffer.from('\r\n\r\n');
           const idxEndHead = buffer.indexOf(delimiter);
 
           if (idxEndHead === -1) {
             return;
           }
 
-          const { method, path, httpVersion, headers, query } = parseHead(
-            buffer.slice(0, idxEndHead).toString("utf8")
+          const { headers, httpVersion, method, path, query } = parseHead(
+            buffer.slice(0, idxEndHead).toString('utf8')
           );
           const szDelimiter = delimiter.length;
           const szNeeded =
-            idxEndHead + szDelimiter + Number(headers["content-length"] || 0);
+            idxEndHead + szDelimiter + Number(headers['content-length'] || 0);
 
           if (buffer.length < szNeeded) {
             return;
           }
 
           const req: T_REQUEST = {
+            body: buffer.slice(idxEndHead + szDelimiter, szNeeded),
+            headers,
+            httpVersion,
             method,
             path,
-            httpVersion,
-            headers,
             query,
-            body: buffer.slice(idxEndHead + szDelimiter, szNeeded),
           };
 
           buffer = buffer.slice(szNeeded);
           this.logger.info({
-            event: "request",
+            event: 'request',
             method: req.method,
             path: req.path,
           });
@@ -61,25 +80,25 @@ class ServerHTTP {
           socket.end();
         } catch (e: any) {
           if (e instanceof ErrorParseRequest) {
-            this.logger.warn({ event: "parse_error", message: e.message });
+            this.logger.warn({ event: 'parse_error', message: e.message });
             socket.write(await this.handler.handleError(e));
             socket.end();
 
             return;
           }
 
-          this.logger.error({ event: "server_error", message: e?.message });
+          this.logger.error({ event: 'server_error', message: e?.message });
           socket.write(
             buildResponse(
               C_STATUS_HTTP.INTERNAL_SERVER_ERROR,
               {
-                "Content-Type": "text/plain; charset=utf-8",
-                "Content-Length": String(
+                Connection: 'close',
+                'Content-Length': String(
                   Buffer.byteLength(
                     C_REASON_STATUS_HTTP[C_STATUS_HTTP.INTERNAL_SERVER_ERROR]
                   )
                 ),
-                Connection: "close",
+                'Content-Type': 'text/plain; charset=utf-8',
               },
               C_REASON_STATUS_HTTP[C_STATUS_HTTP.INTERNAL_SERVER_ERROR]
             )
@@ -89,13 +108,40 @@ class ServerHTTP {
       });
     });
 
+    this.server.on('error', (err: any) => {
+      this.logger.error({ event: 'server_error', message: err?.message });
+    });
+
     this.server.listen(this.port, this.hostname, () => {
       this.logger.info({
-        event: "listening",
+        event: 'listening',
         hostname: this.hostname,
         port: this.port,
       });
     });
+  }
+
+  async stop(opts: { msGrace?: number; msKill?: number } = {}) {
+    const msGrace = opts.msGrace ?? 300;
+    const msKill = opts.msKill ?? 3000;
+
+    if (!this.server) {
+      return;
+    }
+
+    this.logger.info({ event: 'shutdown_start', sockets: this.sockets.size });
+    await new Promise<void>((resolve) =>
+      this.server?.close(() => resolve())
+    ).catch(() => {});
+    await new Promise((r) => setTimeout(r, msGrace));
+
+    for (const s of this.sockets) {
+      try {
+        s.destroy();
+      } catch {}
+    }
+
+    await new Promise((r) => setTimeout(r, msKill));
   }
 }
 

@@ -1,0 +1,4 @@
+{
+  "*.{ts,js}": "eslint --fix --max-warnings=0",
+  "**/*.{test,spec}.{ts,js}": "vitest run --passWithNoTests"
+}
