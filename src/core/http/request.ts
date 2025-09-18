@@ -32,8 +32,8 @@ function parseHead(textsHead: string) {
   const idxStartQueryString = path.indexOf('?');
 
   if (idxStartQueryString >= 0) {
-    path = path.slice(0, idxStartQueryString);
     query = parseQueryString(path.slice(idxStartQueryString + 1));
+    path = path.slice(0, idxStartQueryString);
   }
 
   return {
