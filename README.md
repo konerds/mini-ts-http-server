@@ -66,8 +66,55 @@ Defined in `tsconfig.json`.
 
 #### Line Endings
 
-Normalize to `LF`
-Sorry, Windows.
+- Normalize to `LF`
+- Sorry, Windows.
+
+### Tasks from MoSCoW Methodology
+
+#### Must
+
+- `net` module-based `http` server core
+  - Request parsing
+  - Response construction
+  - Error model
+- Serve static assets and handle 404 errors
+- Support multiple MIME types and minimal Accept header matching
+
+#### Should
+
+- Logging format / sampling / level strategy
+
+#### Could
+
+- Minimal support for HEAD / OPTIONS methods
+- Simple caching
+  - `ETag` / `Last-Modified`
+
+#### Won’t
+
+- End-to-end design for authentication / sessions / authorization
+- Deflating
+  - Learn and implement `gzip` / `Brotli`
+- POST-based forms / file uploads
+- cluster / worker threads
+
+### Diagram
+
+#### Module Dependency
+
+![diagram-module-dependency](assets/diagram-module-dependency.png)
+
+#### Serving Static Resources
+
+![diagram-serving-static-resources](assets/diagram-serving-static-resources.png)
+
+#### Request Handling Sequence Diagram
+
+![diagram-sequence-handling-request](assets/diagram-sequence-handling-request.png)
+
+#### Runtime Flow of Request / Response
+
+![diagram-runtime-flow-request-and-response](assets/diagram-runtime-flow-request-and-response.png)
 
 ### Directory Structure
 
@@ -77,8 +124,10 @@ mini-ts-http-server/
 ├── .lintstagedrc.json
 ├── .prettierrc.json
 ├── assets
-│   ├── diagram-component.png
-│   └── diagram-sequence-handling-request.png
+│   ├── diagram-module-dependency.png
+│   ├── diagram-runtime-flow-request-and-response.png
+│   ├── diagram-sequence-handling-request.png
+│   └── diagram-serving-static-resources.png
 ├── eslint.config.mjs
 ├── package.json
 ├── README.md
@@ -120,18 +169,6 @@ mini-ts-http-server/
 ├── vitest.setup.js
 └── yarn.lock
 ```
-
-### Component Diagram
-
-![diagram-component](assets/diagram-component.png)
-
-### Request Handling Sequence
-
-![diagram-sequence-handling-request](assets/diagram-sequence-handling-request.png)
-
-## ...Work in Progress...
-
-- ...
 
 ## Setup
 
