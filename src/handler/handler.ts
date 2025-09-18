@@ -4,13 +4,11 @@ import { join, posix } from 'path';
 import {
   buildResponse,
   C_METHOD,
-  C_REASON_STATUS_HTTP,
   C_STATUS_HTTP,
   I_HANDLER,
   type T_REQUEST,
 } from '@http';
 
-import { MIME_TEXT_PLAIN } from './constants';
 import {
   handleDelete,
   handleGet,
@@ -18,7 +16,12 @@ import {
   handlePost,
   handlePut,
 } from './router';
-import { getContentType } from './utils';
+import {
+  buildResponseErrorByStatus,
+  getContentType,
+  isAcceptingHTML,
+  isPathRequestAPI,
+} from './utils';
 
 class Handler implements I_HANDLER {
   private pathStatic: string;
@@ -30,49 +33,19 @@ class Handler implements I_HANDLER {
   }
 
   private handleError400() {
-    const body = C_REASON_STATUS_HTTP[C_STATUS_HTTP.BAD_REQUEST];
-
-    return buildResponse(
-      C_STATUS_HTTP.BAD_REQUEST,
-      {
-        Connection: 'close',
-        'Content-Length': String(Buffer.byteLength(body)),
-        'Content-Type': MIME_TEXT_PLAIN,
-      },
-      body
-    );
+    return buildResponseErrorByStatus(C_STATUS_HTTP.BAD_REQUEST);
   }
 
   private handleError403() {
-    const body = C_REASON_STATUS_HTTP[C_STATUS_HTTP.FORBIDDEN];
-
-    return buildResponse(
-      C_STATUS_HTTP.FORBIDDEN,
-      {
-        Connection: 'close',
-        'Content-Length': String(Buffer.byteLength(body)),
-        'Content-Type': MIME_TEXT_PLAIN,
-      },
-      body
-    );
+    return buildResponseErrorByStatus(C_STATUS_HTTP.FORBIDDEN);
   }
 
   private handleError404() {
-    const body = C_REASON_STATUS_HTTP[C_STATUS_HTTP.NOT_FOUND];
-
-    return buildResponse(
-      C_STATUS_HTTP.NOT_FOUND,
-      {
-        Connection: 'close',
-        'Content-Length': String(Buffer.byteLength(body)),
-        'Content-Type': MIME_TEXT_PLAIN,
-      },
-      body
-    );
+    return buildResponseErrorByStatus(C_STATUS_HTTP.NOT_FOUND);
   }
 
   private async handleRequestAPI(req: T_REQUEST) {
-    if (!req.path.startsWith('/api/')) {
+    if (!isPathRequestAPI(req.path)) {
       return null;
     }
 
@@ -129,7 +102,7 @@ class Handler implements I_HANDLER {
     }
   }
 
-  async handleSuccess(req: T_REQUEST): Promise<Buffer> {
+  async handleSuccess(req: T_REQUEST) {
     const fileHTMLEntry = '/index.html';
 
     let response;
@@ -145,7 +118,7 @@ class Handler implements I_HANDLER {
       return response;
     }
 
-    if (req.path.startsWith('/api/')) {
+    if (isPathRequestAPI(req.path)) {
       return this.handleError404();
     }
 
@@ -158,7 +131,8 @@ class Handler implements I_HANDLER {
     }
 
     if (
-      req.method === 'GET' &&
+      req.method === C_METHOD.GET &&
+      isAcceptingHTML(req.headers?.accept) &&
       (response = await this.serveFileStatic('/index.html'))
     ) {
       return response;
