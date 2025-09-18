@@ -1,4 +1,11 @@
-import { MIME_JSON, MIME_TEXT_HTML, MIME_TEXT_PLAIN } from './constants.js';
+import { buildResponse, C_REASON_STATUS_HTTP, type T_STATUS_HTTP } from '@http';
+
+import {
+  MIME_JSON,
+  MIME_TEXT_HTML,
+  MIME_TEXT_PLAIN,
+  PATH_API,
+} from './constants.js';
 
 function getContentType(file: string) {
   if (file.endsWith('.html')) {
@@ -48,4 +55,35 @@ function getContentType(file: string) {
   return MIME_TEXT_PLAIN;
 }
 
-export { getContentType };
+function isAcceptingHTML(accept?: string) {
+  accept = (accept || '*/*').toLowerCase();
+
+  return ['text/html', 'application/xhtml+xml', '*/*'].some((t) =>
+    accept.includes(t)
+  );
+}
+
+function buildResponseErrorByStatus(status: T_STATUS_HTTP) {
+  const body = C_REASON_STATUS_HTTP[status];
+
+  return buildResponse(
+    status,
+    {
+      Connection: 'close',
+      'Content-Length': String(Buffer.byteLength(body)),
+      'Content-Type': MIME_TEXT_PLAIN,
+    },
+    body
+  );
+}
+
+function isPathRequestAPI(path: string) {
+  return path === PATH_API || path.startsWith(`${PATH_API}/`);
+}
+
+export {
+  buildResponseErrorByStatus,
+  getContentType,
+  isAcceptingHTML,
+  isPathRequestAPI,
+};
