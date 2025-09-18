@@ -6,6 +6,7 @@ import {
   MIME_TEXT_PLAIN,
   PATH_API,
 } from './constants.js';
+import type { T_RANGE_MEDIA } from './interfaces.js';
 
 function getContentType(file: string) {
   if (file.endsWith('.html')) {
@@ -55,11 +56,61 @@ function getContentType(file: string) {
   return MIME_TEXT_PLAIN;
 }
 
-function isAcceptingHTML(accept?: string) {
-  accept = (accept || '*/*').toLowerCase();
+function effectiveQ(
+  ranges: T_RANGE_MEDIA[],
+  type: string,
+  subtype: string
+): number {
+  let tckMaxQ = 0;
+  let tckMaxSpec = -1;
 
-  return ['text/html', 'application/xhtml+xml', '*/*'].some((t) =>
-    accept.includes(t)
+  for (const r of ranges) {
+    if (
+      (r.type === type || r.type === '*') &&
+      (r.subtype === subtype || r.subtype === '*')
+    ) {
+      const spec = (r.type === type ? 1 : 0) + (r.subtype === subtype ? 1 : 0);
+
+      if (spec > tckMaxSpec || (spec === tckMaxSpec && r.q > tckMaxQ)) {
+        tckMaxSpec = spec;
+        tckMaxQ = r.q;
+      }
+    }
+  }
+
+  return tckMaxQ;
+}
+
+function isAcceptingHTML(accept?: string) {
+  const ranges = (accept?.trim() || '*/*')
+    .toLowerCase()
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((item) => {
+      const [typePart, ...params] = item.split(';').map((x) => x.trim());
+      const [type = '*', subtype = '*'] = typePart.split('/');
+      let q = 1;
+
+      for (const p of params) {
+        const [k, v] = p.split('=').map((x) => x.trim());
+
+        if (k === 'q') {
+          const n = parseFloat(v);
+
+          if (!Number.isNaN(n)) {
+            q = n;
+          }
+        }
+      }
+
+      return { q, subtype, type };
+    })
+    .filter((r) => r.type && r.subtype && r.q > 0);
+
+  return (
+    effectiveQ(ranges, 'text', 'html') > 0 ||
+    effectiveQ(ranges, 'application', 'xhtml+xml') > 0
   );
 }
 
