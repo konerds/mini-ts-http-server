@@ -139,26 +139,28 @@ mini-ts-http-server/
 yarn install
 ```
 
-## Running in Development
+## Tests
+
+```sh
+yarn test
+```
+
+## Getting Started
+
+### Running in Development
 
 ```sh
 yarn dev
 ```
 
-## Production Build
+### Production Build
 
 ```sh
 yarn build
 ```
 
-## Running in Production
+### Running in Production
 
 ```sh
 yarn start
-```
-
-## Tests
-
-```sh
-yarn test
 ```
