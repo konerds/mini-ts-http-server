@@ -1,5 +1,5 @@
 import { readFile } from 'fs/promises';
-import { join, posix } from 'path';
+import { posix, resolve } from 'path';
 
 import {
   buildResponse,
@@ -68,14 +68,33 @@ class Handler implements I_HANDLER {
   }
 
   private async serveFileStatic(pathURL: string) {
-    const pathAbsSanitized = join(
-      this.pathStatic,
-      posix.normalize(pathURL.split('?')[0]).replace(/^\/+/, '')
-    );
+    const raw = pathURL.split('?')[0];
 
-    if (!pathAbsSanitized.startsWith(this.pathStatic)) {
+    let decoded: string;
+
+    try {
+      decoded = decodeURIComponent(raw);
+    } catch {
+      return buildResponseErrorByStatus(C_STATUS_HTTP.BAD_REQUEST);
+    }
+
+    if (decoded.includes('\0')) {
+      return buildResponseErrorByStatus(C_STATUS_HTTP.BAD_REQUEST);
+    }
+
+    decoded = decoded.replace(/\\/g, '/');
+
+    const pathRelPosix = posix.normalize(decoded.replace(/^\/+/, ''));
+
+    if (
+      pathRelPosix === '..' ||
+      pathRelPosix.startsWith('../') ||
+      pathRelPosix.includes('/../')
+    ) {
       return buildResponseErrorByStatus(C_STATUS_HTTP.FORBIDDEN);
     }
+
+    const pathAbsSanitized = resolve(this.pathStatic, pathRelPosix);
 
     try {
       const data = await readFile(pathAbsSanitized);
