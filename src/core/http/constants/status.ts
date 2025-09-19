@@ -4,6 +4,7 @@ const C_STATUS_HTTP = {
   INTERNAL_SERVER_ERROR: 500,
   NOT_FOUND: 404,
   OK: 200,
+  PAYLOAD_TOO_LARGE: 413,
 } as const;
 
 const C_REASON_STATUS_HTTP = {
@@ -12,6 +13,7 @@ const C_REASON_STATUS_HTTP = {
   [C_STATUS_HTTP.INTERNAL_SERVER_ERROR]: 'Internal Server Error',
   [C_STATUS_HTTP.NOT_FOUND]: 'Not Found',
   [C_STATUS_HTTP.OK]: 'OK',
+  [C_STATUS_HTTP.PAYLOAD_TOO_LARGE]: 'Payload Too Large',
 } as Record<number, string>;
 
 export { C_REASON_STATUS_HTTP, C_STATUS_HTTP };

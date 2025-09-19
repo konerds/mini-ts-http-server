@@ -32,14 +32,6 @@ class Handler implements I_HANDLER {
     this.logger = logger;
   }
 
-  private handleError400() {
-    return buildResponseErrorByStatus(C_STATUS_HTTP.BAD_REQUEST);
-  }
-
-  private handleError403() {
-    return buildResponseErrorByStatus(C_STATUS_HTTP.FORBIDDEN);
-  }
-
   private handleError404() {
     return buildResponseErrorByStatus(C_STATUS_HTTP.NOT_FOUND);
   }
@@ -82,7 +74,7 @@ class Handler implements I_HANDLER {
     );
 
     if (!pathAbsSanitized.startsWith(this.pathStatic)) {
-      return this.handleError403();
+      return buildResponseErrorByStatus(C_STATUS_HTTP.FORBIDDEN);
     }
 
     try {
@@ -144,7 +136,7 @@ class Handler implements I_HANDLER {
   async handleError(e: Error) {
     this.logger.error({ event: 'handler_error', message: e?.message });
 
-    return this.handleError400();
+    return buildResponseErrorByStatus(C_STATUS_HTTP.BAD_REQUEST);
   }
 }
 
