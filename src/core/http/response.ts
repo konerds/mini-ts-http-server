@@ -1,4 +1,4 @@
-import { C_REASON_STATUS_HTTP } from './constants';
+import { C_REASON_STATUS_HTTP, ENCODING_UTF_8 } from './constants';
 
 function buildResponse(
   status: number,
@@ -12,7 +12,7 @@ function buildResponse(
           .map(([k, v]) => `${k}: ${v}`)
           .join('\r\n') +
         '\r\n\r\n',
-      'utf8'
+      ENCODING_UTF_8
     ),
     Buffer.isBuffer(body) ? body : Buffer.from(body),
   ]);

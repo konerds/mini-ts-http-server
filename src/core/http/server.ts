@@ -1,9 +1,15 @@
 import { createServer, Server, Socket } from 'net';
 
-import { C_REASON_STATUS_HTTP, C_STATUS_HTTP } from './constants';
+import {
+  C_REASON_STATUS_HTTP,
+  C_STATUS_HTTP,
+  ENCODING_UTF_8,
+  MIME_TEXT_PLAIN,
+} from './constants';
 import { I_HANDLER, type T_REQUEST } from './interfaces';
 import { ErrorParseRequest, parseHead } from './request';
 import { buildResponse } from './response';
+import { getWrappedWithCharset } from './utils';
 
 class ServerHTTP<T extends I_HANDLER> {
   private server?: Server;
@@ -12,15 +18,18 @@ class ServerHTTP<T extends I_HANDLER> {
   private port: number;
   private handler: T;
   private logger: any;
+  private limitBodyRequest: number;
 
   constructor(
     hostname: string,
     port: number,
+    limitBodyRequest = 2 * 1024 * 1024,
     handler: T,
     logger: any = console
   ) {
     this.hostname = hostname;
     this.port = port;
+    this.limitBodyRequest = limitBodyRequest;
     this.handler = handler;
     this.logger = logger;
   }
@@ -51,8 +60,31 @@ class ServerHTTP<T extends I_HANDLER> {
           }
 
           const { headers, httpVersion, method, path, query } = parseHead(
-            buffer.slice(0, idxEndHead).toString('utf8')
+            buffer.slice(0, idxEndHead).toString(ENCODING_UTF_8)
           );
+          const contentLength = Number(headers['content-length'] || 0);
+
+          if (
+            Number.isFinite(contentLength) &&
+            contentLength > this.limitBodyRequest
+          ) {
+            const body = C_REASON_STATUS_HTTP[C_STATUS_HTTP.PAYLOAD_TOO_LARGE];
+            socket.write(
+              buildResponse(
+                C_STATUS_HTTP.PAYLOAD_TOO_LARGE,
+                {
+                  Connection: 'close',
+                  'Content-Length': String(Buffer.byteLength(body)),
+                  'Content-Type': getWrappedWithCharset(MIME_TEXT_PLAIN),
+                },
+                body
+              )
+            );
+            socket.end();
+
+            return;
+          }
+
           const szDelimiter = delimiter.length;
           const szNeeded =
             idxEndHead + szDelimiter + Number(headers['content-length'] || 0);
@@ -98,7 +130,7 @@ class ServerHTTP<T extends I_HANDLER> {
                     C_REASON_STATUS_HTTP[C_STATUS_HTTP.INTERNAL_SERVER_ERROR]
                   )
                 ),
-                'Content-Type': 'text/plain; charset=utf-8',
+                'Content-Type': getWrappedWithCharset(MIME_TEXT_PLAIN),
               },
               C_REASON_STATUS_HTTP[C_STATUS_HTTP.INTERNAL_SERVER_ERROR]
             )

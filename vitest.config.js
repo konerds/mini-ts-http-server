@@ -1,4 +1,5 @@
 import chalk from 'chalk';
+import tsconfigPaths from 'vite-tsconfig-paths';
 import { defineConfig } from 'vitest/config';
 
 class ReporterLineBreak {
@@ -36,6 +37,7 @@ class ReporterLineBreak {
 }
 
 export default defineConfig({
+  plugins: [tsconfigPaths()],
   test: {
     reporters: ['default', new ReporterLineBreak()],
     setupFiles: ['./vitest.setup.js'],

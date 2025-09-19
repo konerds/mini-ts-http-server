@@ -3,11 +3,13 @@ import { Handler } from '@handler';
 import { ServerHTTP } from '@http';
 import { logger } from '@logger';
 
-const { HOST_SERVER, PATH_STATIC, PORT_SERVER } = getConfigs();
+const { HOST_SERVER, LIMIT_BODY_REQUEST, PATH_STATIC, PORT_SERVER } =
+  getConfigs();
 
 const server = new ServerHTTP(
   HOST_SERVER,
   PORT_SERVER,
+  LIMIT_BODY_REQUEST,
   new Handler(PATH_STATIC, logger),
   logger
 );

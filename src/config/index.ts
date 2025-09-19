@@ -10,6 +10,7 @@ const CONFIGS_DEFAULT = {
   IS_ENV_DEV: NODE_ENV === 'development',
   IS_ENV_PROD,
   IS_ENV_TEST: NODE_ENV === 'test',
+  LIMIT_BODY_REQUEST: Number(process.env.LIMIT_BODY_REQUEST || 2 * 1024 * 1024),
   LOG_LEVEL: process.env.LOG_LEVEL || (IS_ENV_PROD ? 'info' : 'debug'),
   NODE_ENV,
   PATH_STATIC: IS_ENV_PROD
