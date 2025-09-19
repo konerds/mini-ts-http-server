@@ -123,6 +123,8 @@ mini-ts-http-server/
 ├── .gitattributes
 ├── .lintstagedrc.json
 ├── .prettierrc.json
+├── .vscode
+│   └── settings.json
 ├── assets
 │   ├── diagram-module-dependency.png
 │   ├── diagram-runtime-flow-request-and-response.png
@@ -137,8 +139,10 @@ mini-ts-http-server/
 │   ├── core
 │   │   └── http
 │   │       ├── constants
+│   │       │   ├── encoding.ts
 │   │       │   ├── index.ts
 │   │       │   ├── method.ts
+│   │       │   ├── mime.ts
 │   │       │   └── status.ts
 │   │       ├── index.ts
 │   │       ├── interfaces
@@ -146,15 +150,24 @@ mini-ts-http-server/
 │   │       │   ├── index.ts
 │   │       │   ├── method.ts
 │   │       │   ├── query.ts
-│   │       │   └── request.ts
+│   │       │   ├── request.ts
+│   │       │   └── status.ts
 │   │       ├── query.ts
 │   │       ├── request.ts
 │   │       ├── response.ts
-│   │       └── server.ts
+│   │       ├── server.ts
+│   │       └── utils
+│   │           └── index.ts
 │   ├── handler
+│   │   ├── __tests__
+│   │   │   ├── accept-fallback.spec.ts
+│   │   │   ├── block-directory-traversal.spec.ts
+│   │   │   ├── static-mime-404.spec.ts
+│   │   │   └── utils.ts
 │   │   ├── constants.ts
 │   │   ├── handler.ts
 │   │   ├── index.ts
+│   │   ├── interfaces.ts
 │   │   ├── router.ts
 │   │   └── utils.ts
 │   ├── logger
