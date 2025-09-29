@@ -141,6 +141,15 @@ class ServerHTTP<T extends I_HANDLER> {
     });
 
     this.server.on('error', (err: any) => {
+      if (err?.code === 'EADDRINUSE') {
+        this.logger.error({
+          event: 'server_error',
+          message: `Address ${this.hostname}:${this.port} in use`,
+        });
+
+        process.exit((process.exitCode = 1));
+      }
+
       this.logger.error({ event: 'server_error', message: err?.message });
     });
 
